@@ -51,3 +51,33 @@ test('Mladenački sto is available as a distinct horizontal element', () => {
   assert.match(html, /type==='Mladenački sto'\?190:110/);
   assert.match(html, /data-type="Mladenački sto"/);
 });
+
+test('initial bulk table positions survive the table setup wizard step', () => {
+  const tables = Array.from({ length: 25 }, (_, i) => ({
+    id: `bulk-${i + 1}`, name: `Sto ${i + 1}`, shape: 'round', capacity: 10,
+    x: 8 + (i % 7) * 14, y: 12 + Math.floor(i / 7) * 20,
+    initialX: 8 + (i % 7) * 14, initialY: 12 + Math.floor(i / 7) * 20,
+    rotation: 0, autoGrid: true,
+  }));
+  sandbox.step = 3;
+  sandbox.createDraft = { tables };
+  sandbox.document = {
+    querySelectorAll: selector => selector === '[data-tname]'
+      ? tables.map((t, i) => ({ value: t.name, index: i }))
+      : [],
+    querySelector: selector => {
+      return { value: selector.includes('data-tshape') ? 'round' : '10' };
+    },
+  };
+  const start = script.indexOf('function saveWizardStep(');
+  const next = script.indexOf('\nfunction ', start + 1);
+  vm.runInContext(script.slice(start, next), sandbox);
+  assert.equal(sandbox.saveWizardStep(), true);
+  assert.equal(sandbox.createDraft.tables.length, 25);
+  for (let i = 0; i < 25; i++) {
+    assert.equal(sandbox.createDraft.tables[i].id, `bulk-${i + 1}`);
+    assert.equal(sandbox.createDraft.tables[i].autoGrid, true);
+    assert.equal(sandbox.createDraft.tables[i].x, tables[i].x);
+    assert.equal(sandbox.createDraft.tables[i].y, tables[i].y);
+  }
+});
