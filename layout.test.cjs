@@ -46,6 +46,16 @@ test('new tables are distributed with clear spacing in 10, 20, 30 and 50 table p
   }
 });
 
+test('bulk-created tables that start at the same point are spread across the venue', () => {
+  const plan = { roomWidth: 20, roomHeight: 14, tables: Array.from({ length: 23 }, (_, i) => ({
+    id: `bulk-${i}`, shape: 'round', rotation: 0, x: 50, y: 50, autoGrid: true,
+  })) };
+  sandbox.placeNewTableInGrid(plan.tables[0], plan);
+  const positions = new Set(plan.tables.map(t => `${t.x.toFixed(3)},${t.y.toFixed(3)}`));
+  assert.equal(positions.size, plan.tables.length);
+  assert.ok(plan.tables.every(t => t.x > 0 && t.x < 100 && t.y > 0 && t.y < 100));
+});
+
 test('Mladenački sto is available as a distinct horizontal element', () => {
   assert.match(html, /'Mladenački sto'/);
   assert.match(html, /type==='Mladenački sto'\?190:110/);
