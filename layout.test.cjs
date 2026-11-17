@@ -81,3 +81,21 @@ test('initial bulk table positions survive the table setup wizard step', () => {
     assert.equal(sandbox.createDraft.tables[i].y, tables[i].y);
   }
 });
+
+test('continuing from table setup creates the entered batch when preview was skipped', () => {
+  sandbox.step = 3;
+  sandbox.createDraft = { tables: [] };
+  sandbox.uid = (() => { let id = 0; return () => `new-${++id}`; })();
+  sandbox.toast = message => { throw new Error(message); };
+  sandbox.document = {
+    querySelectorAll: () => [],
+    querySelector: () => null,
+    getElementById: id => ({ value: ({ initialTableCount: '23', initialSeatCount: '10', initialTableShape: 'rect' })[id] }),
+  };
+  const start = script.indexOf('function saveWizardStep(');
+  const next = script.indexOf('\nfunction ', start + 1);
+  vm.runInContext(script.slice(start, next), sandbox);
+  assert.equal(sandbox.saveWizardStep(), true);
+  assert.equal(sandbox.createDraft.tables.length, 23);
+  assert.ok(sandbox.createDraft.tables.every(t => t.shape === 'rect' && t.capacity === 10 && t.autoGrid));
+});
